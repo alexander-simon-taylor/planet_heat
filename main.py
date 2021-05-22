@@ -30,6 +30,7 @@ class planet_star_system:
         self.planet_orbital_rate = init_orbital_rate
         self.planet_heat_diffusivity = init_planet_diffusivity
 
+        
     def tidal_locked_temp(self, Bessel_num, sph_harm_num, min_steps):
         if min_steps < (Bessel_num + 1) * (sph_harm_num + 1):
             print("Too few steps.")
