@@ -30,67 +30,31 @@ class planet_star_system:
         self.planet_orbital_rate = init_orbital_rate
         self.planet_heat_diffusivity = init_planet_diffusivity
 
-    def tidal_locked_temp(self, Bessel_num, sph_harm_num, min_steps):
-        if min_steps < (Bessel_num + 1) * (sph_harm_num + 1):
-            print("Too few steps.")
-            return 0
+    def create_grid(self, grid_size, import_static = None):
+        # This creates a grid of temperature values. A cube grid is used to make indexing easy, despite this program
+        # only considering a spherical region.
+        if grid_size//2 == 0:
+            grid_size += 1
+            # Makes grid size an odd number, to ensure a centre point
+        grid_radius = (grid_size + 1)/2 + 1
+        # The +1 at the end forces there to be at least one grid point of empty space around the planet sphere
+        if import_static:
+            # To-do, add ability to unpack list of Fourier coefficients to create starting grid
         else:
-            if np.mod(min_steps, 2) == 0:
-                min_steps += 1
-            temperature_vector = np.zeros(((Bessel_num + 1) * (sph_harm_num + 1), 1))
-            for i in range(1, (Bessel_num + 1) * (sph_harm_num + 1)):
-                temperature_vector[i] = np.pi * i / ((Bessel_num + 1) * (sph_harm_num + 1) - 1)
-            print(temperature_vector)
-            RK4_array = np.zeros((min_steps, 3))
-            RK4_array[0] = [initial_temperature, initial_gradient, 0]
-            temp_vec_counter = 0
-            step_size = np.pi / (min_steps - 1)
-            for i in range(1, min_steps):
-                RK4_array[i] = self.RK4_step(RK4_array[i - 1, 0], RK4_array[i - 1, 1], step_size, i * step_size)
-                if i * step_size >= temperature_vector[temp_vec_counter]:
-                    temperature_vector[temp_vec_counter] = RK4_array[i, 0]
-                    temp_vec_counter += 1
-            print(temperature_vector)
-            print(RK4_array)
-            return 0
-
-    def tidal_lock_B_gradient(self, temperature, temp_gradient, theta):
-        B_gradient = stefan_boltzmann * self.planet_heat_diffusivity * self.planet_radius ** 2 * temperature ** 4
-        print(B_gradient)
-        B_gradient /= self.planet_density * self.planet_shc
-        B_gradient += temp_gradient / np.tan(theta)
-        if theta < np.pi / 2:  # only adds the star's heat if the side of the planet is facing the star
-            B_gradient_addon = self.planet_heat_diffusivity * self.planet_radius ** 2 * self.star_luminosity * np.cos(
-                theta)
-            B_gradient_addon /= 4 * np.pi * self.star_distance ** 2 * self.planet_density * self.planet_shc
-        else:
-            print("Gets here")
-            B_gradient_addon = 0
-        print(B_gradient)
-        print(B_gradient_addon)
-        return B_gradient_addon - B_gradient
-
-    def RK4_step(self, temperature, temp_gradient, step_size, theta):
-        # q is the temperature coordinate, k is the gradient coordinate
-        q1 = step_size * temp_gradient
-        k1 = step_size * self.tidal_lock_B_gradient(temperature, temp_gradient, theta)
-
-        q2 = temp_gradient + k1 / 2
-        k2 = step_size * self.tidal_lock_B_gradient(temperature + q1 / 2, q2, theta)
-        q2 *= step_size
-
-        q3 = temp_gradient + k2 / 2
-        k3 = step_size * self.tidal_lock_B_gradient(temperature + q2 / 2, q3, theta)
-        q3 *= step_size
-
-        q4 = temp_gradient + k3
-        k4 = step_size * self.tidal_lock_B_gradient(temperature + q3, q4, theta)
-        q4 *= step_size
-
-        new_temperature = temperature + (q1 + 2 * q2 + 2 * q3 + q4) / 6
-        new_gradient = temp_gradient + (k1 + 2 * k2 + 2 * k3 + k4) / 6
-        return [new_temperature, new_gradient, theta]
-
+            temperature_grid = np.zeros((grid_size + 2,grid_size + 2,grid_size + 2))
+            for x in range(-grid_radius,grid_radius): # x is axis that faces towards the star
+                for y in range(-grid_radius,grid_radius):
+                    previous_empty_space = True
+                    for z in range(-grid_radius,grid_radius):
+                        if x**2 + y**2 + z**2 > grid_radius**2: # If point is in empty space
+                            temperature_grid[x + grid_radius, y + grid_radius, z + grid_radius] = np.array([0,"space"])
+                            previous_empty_space = True
+                        else: # If point is the surface or inside the surface
+                            if previous_empty_space:
+                                temperature_grid[x + grid_radius, y + grid_radius, z + grid_radius] = np.array([0, "surface"])
+                            else:
+                                temperature_grid[x + grid_radius, y + grid_radius, z + grid_radius] = np.array([0, "interior"])
+                            previous_empty_space = False
 
 star_luminosity = 3.84e26;
 star_distance = 1.49e11;
