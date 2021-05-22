@@ -100,6 +100,47 @@ class planet_star_system:
         plt.show()
         return
 
+    def fourier_coefficients(self, temperature_grid):
+        # Takes in a temperature grid, and using the surface temperatures generates the coefficients of fitting sines and cosines
+        grid_radius = int((len(temperature_grid[:, 0, 0, 0]) - 1) / 2)
+        coordinate_points = np.zeros((0, 4))
+        for x in range(-grid_radius, grid_radius):
+            for y in range(-grid_radius, grid_radius):
+                for z in range(-grid_radius, grid_radius):  # z is the axis facing towards the star
+                    if temperature_grid[x + grid_radius, y + grid_radius, z + grid_radius, 1] == 2:
+                        print(z)
+                        coordinate_row = [x, y, z, temperature_grid[x + grid_radius, y + grid_radius, z + grid_radius, 0]]
+                        coordinate_points = np.vstack((coordinate_points, coordinate_row))
+        highest_order = np.floor(np.power(len(coordinate_points[:, 0]), 1/3)/2)
+        matrix_dimension = 8*highest_order**3
+        matrix = np.zeros((matrix_dimension, matrix_dimension))
+        temp_column_vec = coordinate_points[1:matrix_dimension, 3]
+        for matrix_row in range(0, matrix_dimension)
+            coords = coordinate_points[matrix_row]
+            matrix_column = 0
+            for i in range(0, 2*highest_order):
+                x_order = np.floor(i/2) + 1
+                for j in range(0, 2*highest_order):
+                    y_order = np.floor(j/2) + 1
+                    for k in range(0, 2*highest_order):
+                        z_order = np.floor(k/2) + 1
+                        if i//2 == 0:
+                            matrix_element = np.sin(x_order*np.pi*coords[0]/grid_radius)
+                        else:
+                            matrix_element = np.cos(x_order*np.pi*coords[0]/grid_radius)
+                        if j//2 == 0:
+                            matrix_element *= np.sin(y_order*np.pi*coords[1]/grid_radius)
+                        else:
+                            matrix_element *= np.cos(y_order*np.pi*coords[1]/grid_radius)
+                        if k//2 == 0:
+                            matrix_element *= np.sin(z_order*np.pi*coords[2]/grid_radius)
+                        else:
+                            matrix_element *= np.cos(z_order*np.pi*coords[2]/grid_radius)
+                    matrix[matrix_row, matrix_column] = matrix_element
+                    matrix_column += 1
+
+        return
+
 star_luminosity = 3.84e26;
 star_distance = 1.49e11;
 planet_shc = 830;
