@@ -31,7 +31,7 @@ class planet_star_system:
         self.planet_axial_tilt = init_axial_tilt
         self.planet_orbital_rate = init_orbital_rate
         self.planet_heat_diffusivity = init_planet_diffusivity
-♠
+
     def create_grid(self, grid_size, import_static = None):
         # This creates a grid of temperature values. A cube grid is used to make indexing easy, despite this program
         # only considering a spherical region.
